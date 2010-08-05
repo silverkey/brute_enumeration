@@ -1,1 +1,7 @@
 This project was born upon a collaboration with Ferenc Muller and Marco Ferg on zebrafish TSSs.
+
+ATTENTION THIS CAN POTENTIALLY SUCK ALL YOUR MEMORY!!!
+
+- Consider to use it only for small k-mers <= 10bp
+
+- Consider to chose to use SQLite for big k-mers - slower but safer
