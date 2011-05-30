@@ -1,15 +1,11 @@
 #!/usr/bin/perl
-
 use strict;
 use warnings;
-
 use Cwd;
-use Data::Dumper;
 use File::Copy;
-use Statistics::Descriptive;
-use Bio::SeqIO;
 use Bio::Seq;
 use DBI;
+use Bio::SeqIO;
 
 # This program take in input a fasta file and produce [param] shuffled file of each sequence.
 # Than it looks for the word of length [param] in real and shuffled sequences.
@@ -66,11 +62,14 @@ populate_seq($fasta,$dbh);
 populate_shuffled($fasta,$nsh,$dbh);
 my($word,$last_inserted) = count_real($dbh,$wl);
 count_shuffled($dbh,$wl,$word,$last_inserted,$nsh);
-
 analize_res($dbh,$counts_tab);
 write_log();
 calculate_p_value($counts_tab);
+system('rm *shuffled*');
 
+#-----------------------------
+# ROUTINES
+#-----------------------------
 =head2 shuffle_fasta
 
 Title   : shuffle_fasta
@@ -352,18 +351,18 @@ sub analize_res {
     
     my $word = $words->{$wordid};
     
-    my $r = $occreal->{$wordid};
-    my $num_seq = $seqreal->{$wordid};
+    my $r = ($occreal->{$wordid} || 1);
+    my $num_seq = ($seqreal->{$wordid} || 1);
 
-    my $mean_c = $countsshuff->{$wordid}->{AVGO};
-    my $sd_c = $countsshuff->{$wordid}->{DEVO};
+    my $mean_c = ($countsshuff->{$wordid}->{AVGO} || 1);
+    my $sd_c = ($countsshuff->{$wordid}->{DEVO} || 1);
     my $diff_c = $r - $mean_c;
-    my $z_score_c = $diff_c / ($sd_c || 1);
+    my $z_score_c = $diff_c / $sd_c;
     
-    my $mean_g = $countsshuff->{$wordid}->{AVGS};
-    my $sd_g = $countsshuff->{$wordid}->{DEVS};
+    my $mean_g = ($countsshuff->{$wordid}->{AVGS} || 1);
+    my $sd_g = ($countsshuff->{$wordid}->{DEVS} || 1);
     my $diff_g = $num_seq - $mean_g;
-    my $z_score_g = $diff_g / ($sd_g || 1);
+    my $z_score_g = $diff_g / $sd_g;
     
     print OUT "$word\t$r\t$num_seq\t";
     print OUT "$z_score_c\tNA\tNA\t"; #if $z_score_c;
@@ -379,12 +378,10 @@ sub calculate_p_value {
   $script .=
   '
   f<-read.table(file="'.$counts_tab.'",header=T)
-  for(i in 1:nrow(f)) {    
-    f$p.occ[i] <- 1-pnorm(abs(f$z.occ[i]))
-    f$adp.occ[i] <- nrow(f)*(1-pnorm(abs(f$z.occ[i])))   
-    f$p.seq[i] <- 1-pnorm(abs(f$z.seq[i]))
-    f$adp.seq[i] <- nrow(f)*(1-pnorm(abs(f$z.seq[i])))
-  } 
+  f$p.occ = 1-pnorm(abs(f$z.occ))
+  f$adp.occ <- nrow(f)*(1-pnorm(abs(f$z.occ)))
+  f$p.seq <- 1-pnorm(abs(f$z.seq))
+  f$adp.seq <- nrow(f)*(1-pnorm(abs(f$z.seq)))
   write.table(f,file="stat_'.$counts_tab.'.csv",sep=",",row.names=F,quote=F)
   ';
   
@@ -481,8 +478,8 @@ CREATE TABLE seq_occurrence(
 CREATE TABLE shuffled_counts(
   shuffling INT(5) UNSIGNED NOT NULL,
   word_id INT(20) UNSIGNED NOT NULL,
-  sequences INT(10) UNSIGNED NOT NULL,
   occurrences INT(20) UNSIGNED NOT NULL,
+  sequences INT(10) UNSIGNED NOT NULL,
   KEY shuffling(shuffling),
   KEY word_id(word_id),
   KEY sequences(sequences),

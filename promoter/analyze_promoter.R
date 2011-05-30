@@ -50,7 +50,8 @@ supported.z = function(h) {
 }
 
 draw.words = function(w,con,pdfname) {
-  pdf(file=paste(sep='',pdfname,'.pdf'),paper='a4r',width=8.3,height=11.7,pointsize=8)
+  wl = length(w)
+  pdf(file=pdfname,paper='a4r',width=8.3,height=11.7,pointsize=8)
   par(mfrow=c(3,2))
   for(i in 1:length(w)) {  
     word = w[i]
@@ -61,58 +62,7 @@ draw.words = function(w,con,pdfname) {
     res = dbSendQuery(con,query)
     pos = fetch(res,n=-1)
     pos = pos$pos
-    hist(pos,breaks=seq(1,100,1),col=8,main=word)
+    hist(pos-100,breaks=seq(1-100,100-100,1),col=8,main=word)
   }
   dev.off()
 }
-
-
-library(RMySQL)
-db = 'MM_upstream_100_1_NSH_100_WL_6'
-usr = 'mysql_dev'
-pwd = 'riiGbs'
-zcutoff = 3
-stat = 'stat_MM_upstream_100_1.fa_100_6_counts.xls.csv'
-pdfname = 'MM'
-drv = dbDriver("MySQL")
-con = dbConnect(drv,db,usr,pwd)
-t = read.table(file = stat, sep = ',', header = T)
-t = na.omit(t[t$z.seq > zcutoff,])
-pos = analyze.words(t$word,con)
-pos = na.omit(pos[pos$z.score > zcutoff,])
-pos = pos[order(pos$median.diff,decreasing=T),]
-draw.words(pos$word,con,pdfname)
-
-
-library(RMySQL)
-db = 'FC_upstream_100_1_NSH_100_WL_6'
-usr = 'mysql_dev'
-pwd = 'riiGbs'
-zcutoff = 2.5
-stat = 'stat_FC_upstream_100_1.fa_100_6_counts.xls.csv'
-pdfname = 'FC'
-drv = dbDriver("MySQL")
-con = dbConnect(drv,db,usr,pwd)
-t = read.table(file = stat, sep = ',', header = T)
-t = na.omit(t[t$z.seq > zcutoff,])
-pos = analyze.words(t$word,con)
-pos = na.omit(pos[pos$z.score > zcutoff,])
-pos = pos[order(pos$median.diff,decreasing=T),]
-draw.words(pos$word,con,pdfname)
-
-
-library(RMySQL)
-db = 'DM_upstream_100_1_NSH_100_WL_6'
-usr = 'mysql_dev'
-pwd = 'riiGbs'
-zcutoff = 3
-stat = 'stat_DM_upstream_100_1.fa_100_6_counts.xls.csv'
-pdfname = 'DM'
-drv = dbDriver("MySQL")
-con = dbConnect(drv,db,usr,pwd)
-t = read.table(file = stat, sep = ',', header = T)
-t = na.omit(t[t$z.seq > zcutoff,])
-pos = analyze.words(t$word,con)
-pos = na.omit(pos[pos$z.score > zcutoff,])
-pos = pos[order(pos$median.diff,decreasing=T),]
-draw.words(pos$word,con,pdfname)
